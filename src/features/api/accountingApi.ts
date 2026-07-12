@@ -1,11 +1,22 @@
 import type {UserProfile, UserRegister, UserUpdate} from "../../utils/types";
 import {BASE_URL} from "../../utils/constants.ts";
 import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
+import type {RootState} from "../../app/store.ts";
+
+const authEndpoints =['updateUser'];
 
 export const accountingApi = createApi({
     reducerPath: "accountingApi",
-    tagTypes : ['profile'],
-    baseQuery: fetchBaseQuery({baseUrl: BASE_URL}),
+    tagTypes: ['profile'],
+    baseQuery: fetchBaseQuery({
+        baseUrl: BASE_URL,
+        prepareHeaders: (headers, {getState, endpoint}) => {
+            if (authEndpoints.includes(endpoint)) {
+                headers.set('Authorization', (getState() as RootState).token);
+            }
+            return headers;
+        }
+    }),
     endpoints: builder => ({
         registerUser: builder.mutation<UserProfile, UserRegister>({
             query: user => ({
@@ -22,16 +33,13 @@ export const accountingApi = createApi({
                     Authorization: token
                 }
             }),
-            providesTags:['profile'],
+            providesTags: ['profile'],
         }),
-        updateUser: builder.mutation<UserProfile, { user: UserUpdate, login: string, token: string }>({
-            query: ({user, login, token}) => ({
+        updateUser: builder.mutation<UserProfile, { user: UserUpdate, login: string }>({
+            query: ({user, login}) => ({
                 url: `/account/user/${login}`,
                 method: 'PATCH',
                 body: user,
-                headers: {
-                    Authorization: token
-                }
             }),
             invalidatesTags: ['profile'],
         }),
@@ -48,7 +56,13 @@ export const accountingApi = createApi({
     })
 })
 
-export const {useRegisterUserMutation, useLazyFetchUserQuery , useFetchUserQuery, useChangePasswordMutation, useUpdateUserMutation} = accountingApi
+export const {
+    useRegisterUserMutation,
+    useLazyFetchUserQuery,
+    useFetchUserQuery,
+    useChangePasswordMutation,
+    useUpdateUserMutation
+} = accountingApi
 
 // export const registerUser = createAsyncThunk(
 //     'user/register',
